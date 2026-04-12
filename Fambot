@@ -1,0 +1,210 @@
+-- สร้าง ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local UIStroke = Instance.new("UIStroke") -- สำหรับขอบ RGB
+local Title = Instance.new("TextLabel")
+local StatusLabel = Instance.new("TextLabel")
+local AddPointBtn = Instance.new("TextButton")
+local ClearPointsBtn = Instance.new("TextButton")
+local ToggleBtn = Instance.new("TextButton")
+
+-- ==========================================
+-- ฟังก์ชันสำหรับเพิ่มความโค้งมน (UICorner)
+-- ==========================================
+local function MakeRounded(instance, cornerRadius)
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, cornerRadius) -- ตั้งค่าความมน (เป็นพิกเซล)
+    uiCorner.Parent = instance
+end
+
+-- ตั้งค่า ScreenGui
+ScreenGui.Name = "FarmGui_Mobile"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ตั้งค่าหน้าต่างหลัก (MainFrame)
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35) -- สีพื้นหลังเข้มขึ้นเล็กน้อย
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 200, 0, 220) -- ปรับขนาดเล็กน้อย
+MainFrame.Active = true
+MainFrame.Draggable = true -- ลากวางได้
+
+-- **เพิ่มความโค้งมนให้หน้าต่างหลัก (10 พิกเซล)**
+MakeRounded(MainFrame, 10)
+
+-- ตั้งค่าขอบ RGB (UIStroke)
+UIStroke.Parent = MainFrame
+UIStroke.Thickness = 3
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.LineJoinMode = Enum.LineJoinMode.Round -- ทำให้มุมขอบ RGB มนตาม Frame
+
+-- หัวข้อ
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Text = "Auto Farm E"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.BackgroundTransparency = 1
+
+-- แสดงจำนวนจุด
+StatusLabel.Name = "StatusLabel"
+StatusLabel.Parent = MainFrame
+StatusLabel.Position = UDim2.new(0, 0, 0, 40)
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Text = "จุดที่บันทึก: 0"
+StatusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+StatusLabel.TextSize = 14
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.BackgroundTransparency = 1
+
+-- ตัวแปรระบบ
+local Points = {}
+local IsFarming = false
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- ฟังก์ชันขอบ RGB
+spawn(function()
+    while task.wait(0.05) do
+        local hue = tick() % 5 / 5
+        UIStroke.Color = Color3.fromHSV(hue, 1, 1)
+    end
+end)
+
+-- สไตล์ปุ่มพื้นฐาน
+local function SetButtonStyle(button, text, yPos)
+    button.Parent = MainFrame
+    button.Position = UDim2.new(0.1, 0, 0, yPos)
+    button.Size = UDim2.new(0.8, 0, 0, 35)
+    button.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    button.Text = text
+    button.TextColor3 = Color3.new(1, 1, 1)
+    button.TextSize = 14
+    button.Font = Enum.Font.GothamMedium
+    button.AutoButtonColor = true
+    
+    -- **เพิ่มความโค้งมนให้ปุ่ม (8 พิกเซล)**
+    MakeRounded(button, 8)
+end
+
+-- สร้างปุ่มต่างๆ
+SetButtonStyle(AddPointBtn, "เพิ่มจุดปัจจุบัน", 75)
+SetButtonStyle(ClearPointsBtn, "ล้างจุดทั้งหมด", 120)
+SetButtonStyle(ToggleBtn, "เริ่มฟาร์ม", 165)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 40) -- ปรับปุ่มเริ่มให้เด่นขึ้น
+
+-- --- ระบบการทำงาน (Logic) ---
+
+-- ปุ่ม 1: เพิ่มจุด
+AddPointBtn.MouseButton1Click:Connect(function()
+    local player = game.Players.LocalPlayer
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local hrpPos = char.HumanoidRootPart.Position
+        -- บันทึกเป็น Vector3 หรือสร้าง Part เล็กๆ เพื่อทำหน้าที่เป็นจุดหมายก็ได้ (ในที่นี้ใช้พิกเซล)
+        table.insert(Points, hrpPos)
+        StatusLabel.Text = "จุดที่บันทึก: " .. #Points
+        
+        -- Effect ปุ๊บปั๊บเมื่อกด
+        AddPointBtn.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+        task.wait(0.1)
+        AddPointBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    end
+end)
+
+-- ปุ่ม 2: ล้างจุด
+ClearPointsBtn.MouseButton1Click:Connect(function()
+    Points = {}
+    StatusLabel.Text = "จุดที่บันทึก: 0"
+    
+    -- Effect ปุ๊บปั๊บเมื่อกด
+    ClearPointsBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    task.wait(0.1)
+    ClearPointsBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+end)
+
+-- ปุ่ม 3: เปิด/ปิด ออโต้ฟาร์ม
+ToggleBtn.MouseButton1Click:Connect(function()
+    IsFarming = not IsFarming
+    if IsFarming then
+        ToggleBtn.Text = "หยุดฟาร์ม"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    else
+        ToggleBtn.Text = "เริ่มฟาร์ม"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        -- ประกันว่าปุ่ม E ถูกปล่อย
+        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+    end
+end)
+
+-- ลอจิกการฟาร์ม (ทำงานเบื้องหลัง)
+spawn(function()
+    while true do
+        task.wait(0.5) -- เช็คทุกๆ 0.5 วิ
+        
+        if IsFarming and #Points > 0 then
+            for i, pos in ipairs(Points) do
+                if not IsFarming then break end
+                
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                if not char then continue end
+                local hrp = char:WaitForChild("HumanoidRootPart", 5)
+                local hum = char:WaitForChild("Humanoid", 5)
+                if not hrp or not hum then continue end
+                
+                -- แสดงสถานะว่ากำลังไปจุดไหน
+                StatusLabel.Text = "กำลังไปจุดที่: " .. i .. " / " .. #Points
+                
+                -- เดินไปที่จุด
+                hum:MoveTo(pos)
+                
+                -- รอจนกว่าจะถึงจุด (เช็คระยะห่าง ภายใน 4 Studs) หรือกดหยุด
+                local reached = false
+                local giveUpTime = tick() + 30 -- ให้เวลาเดิน 30 วิ ถ้าติดบัค
+                repeat 
+                    task.wait(0.1) 
+                    if (hrp.Position - pos).Magnitude < 4 then
+                        reached = true
+                    end
+                until reached or not IsFarming or tick() > giveUpTime
+                
+                -- เมื่อถึงจุด และยังเปิดฟาร์มอยู่
+                if reached and IsFarming then
+                    hum:MoveTo(hrp.Position) -- หยุดเดิน
+                    StatusLabel.Text = "ถึงจุดที่ "..i.." -> กด E (15 วิ)"
+                    
+                    -- กด E ค้างไว้
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                    
+                    -- นับเวลา 15 วิ (สามารถหยุดกลางคันได้)
+                    for t = 1, 150 do -- 150 * 0.1 = 15 วินาที
+                        if not IsFarming then break end
+                        task.wait(0.1)
+                    end
+                    
+                    -- ปล่อยปุ่ม E
+                    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                    StatusLabel.Text = "ปล่อย E -> ไปจุดถัดไป"
+                    task.wait(0.5) -- พักสั้นๆ
+                end
+            end
+            if IsFarming then
+                StatusLabel.Text = "วนครบรอบ (เริ่มใหม่)"
+                task.wait(1)
+            end
+        elseif IsFarming and #Points == 0 then
+             StatusLabel.Text = "⚠️ กรุณาเพิ่มจุดก่อน!"
+             task.wait(2)
+             StatusLabel.Text = "จุดที่บันทึก: 0"
+             IsFarming = false
+             ToggleBtn.Text = "เริ่มฟาร์ม"
+             ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        else
+            StatusLabel.Text = "รอเริ่มฟาร์ม (บันทึกแล้ว: " .. #Points .. ")"
+        end
+    end
+end)
