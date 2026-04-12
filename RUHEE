@@ -1,0 +1,140 @@
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+-- ต้องสร้าง Window ก่อนถึงจะสร้าง Tab ได้
+local Window = WindUI:CreateWindow({
+    Title = "Ruhee Hub", -- เปลี่ยนชื่อตามที่คุณต้องการ
+    Icon = "door-open",
+    Author = "by .ftgs and .ftgs",
+    
+    -- ตั้งค่าปุ่มเปิด/ปิด UI (OpenButton)
+    OpenButton = {
+        Title = "Open Example UI",
+        Icon = "monitor",
+        CornerRadius = UDim.new(0, 16),
+        StrokeThickness = 2,
+        Color = ColorSequence.new(
+            Color3.fromHex("FF0F7B"), 
+            Color3.fromHex("F89B29")
+        ),
+        OnlyMobile = false,
+        Enabled = true,
+        Draggable = true,
+    }
+})
+
+-- สร้าง Tab
+local Tab1 = Window:Tab({
+    Title = "Fam", -- ตามที่คุณต้องการเปลี่ยนจาก Main เป็น ข้อมูล
+    Icon = "Fam",
+    Locked = false,
+})
+
+Tab1:Button({
+    Title = "ออโต้ฟาม",
+    Callback = function()
+        -- [[ ส่วนสร้างเมนู GearFarm เมื่อกดปุ่ม ]]
+        local player = game:GetService("Players").LocalPlayer
+        local coreGui = game:GetService("CoreGui")
+
+        if coreGui:FindFirstChild("GearFarm_FinalV3") then 
+            coreGui["GearFarm_FinalV3"]:Destroy() 
+        end
+
+        local ScreenGui = Instance.new("ScreenGui")
+        ScreenGui.Name = "GearFarm_FinalV3"
+        ScreenGui.Parent = coreGui
+
+        local Frame = Instance.new("Frame")
+        Frame.Size = UDim2.new(0, 160, 0, 180)
+        Frame.Position = UDim2.new(0, 50, 0, 150)
+        Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        Frame.Active = true
+        Frame.Draggable = true
+        Frame.Parent = ScreenGui
+
+        local FrameCorner = Instance.new("UICorner")
+        FrameCorner.CornerRadius = UDim.new(0, 8)
+        FrameCorner.Parent = Frame
+
+        local FrameStroke = Instance.new("UIStroke")
+        FrameStroke.Thickness = 2
+        FrameStroke.Parent = Frame
+        task.spawn(function()
+            while task.wait() and FrameStroke do
+                FrameStroke.Color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+            end
+        end)
+
+        local function createBtn(text, pos, color, func)
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(0, 140, 0, 40)
+            btn.Position = pos
+            btn.Text = text
+            btn.Font = Enum.Font.GothamBold
+            btn.BackgroundColor3 = color
+            btn.TextColor3 = Color3.new(1, 1, 1)
+            btn.Parent = Frame
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 6)
+            ButtonCorner.Parent = btn
+            btn.MouseButton1Click:Connect(function() func(btn) end)
+            return btn
+        end
+
+        local Points = {}
+        _G.AutoFarm = false
+
+        createBtn("1. บันทึกจุดคอม", UDim2.new(0, 10, 0, 10), Color3.fromRGB(0, 120, 215), function()
+            local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            if root then table.insert(Points, root.Position) end
+        end)
+
+        createBtn("2. ล้างจุดทั้งหมด", UDim2.new(0, 10, 0, 60), Color3.fromRGB(60, 60, 60), function() Points = {} end)
+
+        createBtn("3. Farm: OFF", UDim2.new(0, 10, 0, 110), Color3.fromRGB(200, 0, 0), function(btn)
+            _G.AutoFarm = not _G.AutoFarm
+            btn.Text = _G.AutoFarm and "3. Farm: ON" or "3. Farm: OFF"
+            btn.BackgroundColor3 = _G.AutoFarm and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(200, 0, 0)
+        end)
+
+        -- ระบบ Loop ฟาร์ม
+        task.spawn(function()
+            while true do
+                task.wait(0.5)
+                if _G.AutoFarm and #Points > 0 then
+                    for i = 1, #Points do
+                        if not _G.AutoFarm then break end
+                        local targetPos = Points[i]
+                        local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                        local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+                        if root and hum then
+                            hum:MoveTo(targetPos)
+                            local tMove = tick()
+                            while (root.Position - targetPos).Magnitude > 3.5 and _G.AutoFarm do
+                                if tick() - tMove > 7 then break end
+                                task.wait(0.1)
+                            end
+                            hum:MoveTo(root.Position) 
+                            task.wait(0.8) 
+                            -- ตรวจหาปุ่ม E
+                            local done = false
+                            for _, v in pairs(workspace:GetDescendants()) do
+                                if v:IsA("ProximityPrompt") and (v.Parent.Position - targetPos).Magnitude < 8 then
+                                    v:InputHoldBegin()
+                                    task.wait(15) 
+                                    v:InputHoldEnd()
+                                    done = true
+                                    break
+                                end
+                            end
+                            task.wait(0.5)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+})
+
+
+Tab1:Select() -- ให้เลือก Tab นี้ทันทีที่รัน
