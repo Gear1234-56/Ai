@@ -1,0 +1,117 @@
+-- 1. โหลด Library
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+-- 2. สร้างหน้าต่างหลัก พร้อมระบบ Key (คีย์เดียวที่คุณตั้งเอง)
+local Window = Rayfield:CreateWindow({
+   Name = "Ruhee Hub | by Gear",
+   LoadingTitle = "กำลังโหลดสคริปต์...",
+   LoadingSubtitle = "รอสักครู่",
+   ConfigurationSaved = false,
+   DeviceSaving = true, 
+   KeySystem = true, -- เปิดใช้งานระบบ Key
+   KeySettings = {
+      Title = "Key System",
+      Subtitle = "กรุณาใส่คีย์เพื่อเข้าใช้งาน",
+      Note = "คีย์คือ: RUHEEBIG", -- แจกคีย์ไว้ตรงหน้า Note เลย
+      FileName = "RuheeKeyConfig", 
+      SaveKey = false, -- ตั้งเป็น false เพื่อให้คีย์หมดอายุตามที่คุณต้องการเปลี่ยนเอง
+      GrabKeyFromSite = false, -- ปิดการเช็คผ่านเว็บ Platoboost
+      Key = {"RUHEEBIG"} -- ตั้งคีย์ตามที่คุณสั่งเรียบร้อยครับ
+   }
+})
+
+-- 3. สร้างหมวดหมู่
+local Tab1 = Window:CreateTab("Farm 🧑‍🌾", 4483362458) 
+local Tab2 = Window:CreateTab("Combat ⚔️", 10747383161) 
+
+-- [[ Tab1: Farm ]]
+
+Tab1:CreateButton({
+   Name = "เปิดเมนูออโต้ฟาร์ม",
+   Callback = function()
+       local url = "https://raw.githubusercontent.com/Gear1234-56/MyRobloxScripts/refs/heads/main/%E0%B8%9F%E0%B8%B2%E0%B8%A19191"
+       pcall(function()
+           loadstring(game:HttpGet(url, true))()
+       end)
+       
+       Rayfield:Notify({
+          Title = "สำเร็จ!",
+          Content = "รันสคริปต์ฟาร์มแล้ว",
+          Duration = 5,
+          Image = 4483362458,
+       })
+   end,
+})
+
+Tab1:CreateToggle({
+   Name = "FastClick",
+   CurrentValue = false,
+   Flag = "FastClickFlag",
+   Callback = function(Value)
+    _G.FastHoldEnabled = Value
+    if Value then
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Gear1234-56/MyRobloxScripts/refs/heads/main/%E0%B8%81%E0%B8%94%E0%B8%AB%E0%B8%A1%E0%B8%B1%E0%B8%94%E0%B8%84%E0%B9%89%E0%B8%B2%E0%B8%87", true))()
+        end)
+    end
+end,
+})
+
+-- [[ Tab2: Combat ]]
+
+Tab2:CreateButton({
+   Name = "ตอนนี้ใช้งานไม่ได้",
+   Callback = function()
+       pcall(function()
+           loadstring(game:HttpGet("https://raw.githubusercontent.com/Gear1234-56/MyRobloxScripts/refs/heads/main/%E0%B9%84%E0%B8%AD%E0%B8%AA%E0%B8%B1%E0%B8%AA%E0%B9%89%E0%B8%AA%E0%B8%94%E0%B8%AA%E0%B8%94%E0%B8%A3", true))()
+       end)
+   end,
+})
+
+Tab2:CreateButton({
+   Name = "hitbox",
+   Callback = function()
+       pcall(function()
+           loadstring(game:HttpGet("https://raw.githubusercontent.com/Gear1234-56/MyRobloxScripts/refs/heads/main/%E0%B8%AE%E0%B8%B4%E0%B8%84", true))()
+       end)
+   end,
+})
+
+-- ปุ่มรวมผู้เล่น (ระยะ -5)
+Tab2:CreateToggle({
+   Name = "Total players",
+   CurrentValue = false,
+   Flag = "BringAllFlag",
+   Callback = function(Value)
+       _G.BringAll = Value
+       if Value then
+           task.spawn(function()
+               while _G.BringAll do
+                   pcall(function()
+                       local LocalPlayer = game:GetService("Players").LocalPlayer
+                       local Character = LocalPlayer.Character
+                       if Character and Character:FindFirstChild("HumanoidRootPart") then
+                           local targetPos = Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                           for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+                               if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                   player.Character.HumanoidRootPart.CFrame = targetPos
+                               end
+                           end
+                       end
+                   end)
+                   task.wait(0.1)
+               end
+           end)
+       end
+   end,
+})
+
+-- [[ ระบบ FastHold (ProximityPrompt) ]]
+local ProximityPromptService = game:GetService("ProximityPromptService")
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+    if _G.FastHoldEnabled then
+        pcall(function()
+            fireproximityprompt(prompt)
+        end)
+    end
+end)
