@@ -1,0 +1,86 @@
+-- ==========================================
+-- [[ ระบบ ESP (ทำงานเบื้องหลัง) ]]
+-- ==========================================
+
+-- ฟังก์ชันสำหรับสร้าง/ลบ ESP เส้นขอบ
+local function UpdateBoxESP(enabled)
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            if enabled then
+                local function AddH(char)
+                    task.wait(0.2)
+                    if not char:FindFirstChild("BoxHighlight") then
+                        local h = Instance.new("Highlight", char)
+                        h.Name = "BoxHighlight"
+                        h.FillTransparency = 1
+                        h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    end
+                end
+                if p.Character then AddH(p.Character) end
+                p.CharacterAdded:Connect(AddH)
+            else
+                if p.Character and p.Character:FindFirstChild("BoxHighlight") then
+                    p.Character.BoxHighlight:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- ฟังก์ชันสำหรับสร้าง/ลบ ESP หลอดเลือด
+local function UpdateHealthESP(enabled)
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            if enabled then
+                local function AddH(char)
+                    local head = char:WaitForChild("Head", 5)
+                    if head and not head:FindFirstChild("HealthBarUI") then
+                        local bgui = Instance.new("BillboardGui", head)
+                        bgui.Name = "HealthBarUI"
+                        bgui.AlwaysOnTop = true
+                        bgui.Size = UDim2.new(4, 0, 0.5, 0)
+                        bgui.StudsOffset = Vector3.new(0, 2.5, 0)
+                        local f = Instance.new("Frame", bgui)
+                        f.Size = UDim2.new(1, 0, 1, 0)
+                        f.BackgroundColor3 = Color3.new(0,0,0)
+                        local b = Instance.new("Frame", f)
+                        b.Size = UDim2.new(1, 0, 1, 0)
+                        b.BackgroundColor3 = Color3.new(0,1,0)
+                        local hum = char:WaitForChild("Humanoid")
+                        hum.HealthChanged:Connect(function(hp)
+                            b.Size = UDim2.new(hp/hum.MaxHealth, 0, 1, 0)
+                        end)
+                    end
+                end
+                if p.Character then AddH(p.Character) end
+                p.CharacterAdded:Connect(AddH)
+            else
+                if p.Character and p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("HealthBarUI") then
+                    p.Character.Head.HealthBarUI:Destroy()
+                end
+            end
+        end
+    end
+end
+
+-- ==========================================
+-- [[ เอาไปวางใน Tab ที่คุณมีอยู่แล้ว (เช่น Tab1 หรือ Tab2) ]]
+-- ==========================================
+
+Tab1:CreateToggle({
+   Name = "ESP เส้นขอบ",
+   CurrentValue = false,
+   Flag = "Box_Toggle",
+   Callback = function(Value)
+       UpdateBoxESP(Value)
+   end,
+})
+
+Tab1:CreateToggle({
+   Name = "ESP หลอดเลือด",
+   CurrentValue = false,
+   Flag = "Health_Toggle",
+   Callback = function(Value)
+       UpdateHealthESP(Value)
+   end,
+})
