@@ -1,0 +1,42 @@
+-- [[ ESP Box Only (มีแค่เส้นขอบ ไม่บังตัว ไม่รวมตัวเอง) ]]
+
+local function ApplyBoxESP(player)
+    -- ตรวจสอบว่าไม่ใช่ตัวเราเอง
+    if player == game.Players.LocalPlayer then return end
+
+    local function AddHighlight(char)
+        task.wait(0.2) -- รอให้โมเดลโหลด
+        
+        -- ลบของเก่าออกถ้ามี
+        if char:FindFirstChild("OuterBoxESP") then
+            char.OuterBoxESP:Destroy()
+        end
+
+        -- สร้างระบบเส้นขอบ
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "OuterBoxESP"
+        highlight.Parent = char
+        highlight.Adornee = char
+        
+        -- [[ ตั้งค่าให้โปร่งใส เห็นแค่ขอบ ]]
+        highlight.FillTransparency = 1 -- ทำให้มองเห็นชุดตัวละครปกติ (ไม่ระบายสีทับ)
+        highlight.OutlineColor = Color3.fromRGB(255, 255, 255) -- สีเส้นขอบ (ขาว)
+        highlight.OutlineTransparency = 0 -- ความชัดของเส้นขอบ
+    end
+
+    -- รันเมื่อตัวละครเกิด
+    if player.Character then
+        AddHighlight(player.Character)
+    end
+    player.CharacterAdded:Connect(AddHighlight)
+end
+
+-- รันระบบกับทุกคนในเซิร์ฟ
+for _, p in pairs(game.Players:GetPlayers()) do
+    ApplyBoxESP(p)
+end
+
+-- รันระบบกับคนที่เข้ามาใหม่
+game.Players.PlayerAdded:Connect(ApplyBoxESP)
+
+print("ESP Box Active: เปิดระบบเส้นขอบแล้ว (ไม่มีหลอดเลือด)")
