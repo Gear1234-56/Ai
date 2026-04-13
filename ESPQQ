@@ -1,0 +1,48 @@
+-- [[ Friend ESP Only (เฉพาะเพื่อนเท่านั้น มีแค่เส้นขอบ ไม่รวมตัวเอง) ]]
+
+local function ApplyFriendESP(player)
+    -- 1. เช็คว่าไม่ใช่ตัวเราเอง
+    -- 2. เช็คว่าเป็นเพื่อนกับเราหรือไม่ (IsFriendsWith)
+    if player == game.Players.LocalPlayer then return end
+    
+    local isFriend = false
+    pcall(function()
+        isFriend = game.Players.LocalPlayer:IsFriendsWith(player.UserId)
+    end)
+
+    -- ถ้าไม่ใช่เพื่อน ให้หยุดทำงานทันที
+    if not isFriend then return end
+
+    local function AddHighlight(char)
+        task.wait(0.2)
+        
+        if char:FindFirstChild("FriendESP") then
+            char.FriendESP:Destroy()
+        end
+
+        local highlight = Instance.new("Highlight")
+        highlight.Name = "FriendESP"
+        highlight.Parent = char
+        highlight.Adornee = char
+        
+        -- [[ ตั้งค่าสีสำหรับเพื่อน ]]
+        highlight.FillTransparency = 1 -- ไม่บังชุด
+        highlight.OutlineColor = Color3.fromRGB(0, 255, 120) -- สีเขียวมินต์ (ให้ต่างจากศัตรู)
+        highlight.OutlineTransparency = 0
+    end
+
+    if player.Character then
+        AddHighlight(player.Character)
+    end
+    player.CharacterAdded:Connect(AddHighlight)
+end
+
+-- รันระบบกับทุกคนในเซิร์ฟ
+for _, p in pairs(game.Players:GetPlayers()) do
+    ApplyFriendESP(p)
+end
+
+-- รันระบบกับคนที่เข้ามาใหม่
+game.Players.PlayerAdded:Connect(ApplyFriendESP)
+
+print("Friend ESP Active: แสดงเส้นขอบเฉพาะเพื่อนของคุณแล้ว")
