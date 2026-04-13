@@ -1,0 +1,169 @@
+-- [[ DELTA AIMBOT - BY RUHEE ]] --
+
+-- ตรวจสอบและลบ UI เก่าออกก่อน
+if game.CoreGui:FindFirstChild("RUHEE_Aimbot") then
+    game.CoreGui.RUHEE_Aimbot:Destroy()
+end
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+
+-- // Settings // --
+local Settings = {
+    Enabled = false,
+    FOVSize = 150,
+    RainbowSpeed = 5
+}
+
+-- // สร้าง UI หลัก // --
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RUHEE_Aimbot"
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- [ วง FOV สายรุ้งกลางจอ ]
+local FOVFrame = Instance.new("Frame")
+FOVFrame.Name = "FOV_Circle"
+FOVFrame.Parent = ScreenGui
+FOVFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+FOVFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+FOVFrame.Size = UDim2.new(0, Settings.FOVSize * 2, 0, Settings.FOVSize * 2)
+FOVFrame.BackgroundTransparency = 1
+
+local FOVStroke = Instance.new("UIStroke")
+FOVStroke.Thickness = 2
+FOVStroke.Parent = FOVFrame
+
+local FOVCorner = Instance.new("UICorner")
+FOVCorner.CornerRadius = UDim.new(1, 0)
+FOVCorner.Parent = FOVFrame
+
+-- [ หน้าต่างเมนู Main UI ]
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Parent = ScreenGui
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.Position = UDim2.new(0.5, -90, 0.3, 0)
+Main.Size = UDim2.new(0, 180, 0, 180)
+Main.Active = true
+Main.Draggable = true
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 15)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 3
+MainStroke.Parent = Main
+
+-- [ เครดิต By RUHEE ]
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.BackgroundTransparency = 1
+Title.Text = "BY RUHEE"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = Main
+
+-- [ ปุ่ม Toggle Aimbot ]
+local Toggle = Instance.new("TextButton")
+Toggle.Size = UDim2.new(0.8, 0, 0.25, 0)
+Toggle.Position = UDim2.new(0.1, 0, 0.25, 0)
+Toggle.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Toggle.Text = "Aimbot: OFF"
+Toggle.TextColor3 = Color3.new(1, 1, 1)
+Toggle.Font = Enum.Font.GothamBold
+Toggle.Parent = Main
+Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 8)
+
+Toggle.MouseButton1Click:Connect(function()
+    Settings.Enabled = not Settings.Enabled
+    Toggle.Text = Settings.Enabled and "Aimbot: ON" or "Aimbot: OFF"
+    Toggle.BackgroundColor3 = Settings.Enabled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
+end)
+
+-- [ ช่องใส่ตัวเลขปรับขนาด FOV ]
+local Input = Instance.new("TextBox")
+Input.Size = UDim2.new(0.8, 0, 0.2, 0)
+Input.Position = UDim2.new(0.1, 0, 0.55, 0)
+Input.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Input.Text = tostring(Settings.FOVSize)
+Input.PlaceholderText = "FOV Size"
+Input.TextColor3 = Color3.new(1, 1, 1)
+Input.Parent = Main
+Instance.new("UICorner", Input).CornerRadius = UDim.new(0, 8)
+
+Input.FocusLost:Connect(function()
+    local n = tonumber(Input.Text)
+    if n then 
+        Settings.FOVSize = n 
+        FOVFrame.Size = UDim2.new(0, n * 2, 0, n * 2)
+    end
+end)
+
+-- [ ปุ่มเปิด/ปิด UI (Toggle Visibility) ]
+local HideBtn = Instance.new("TextButton")
+HideBtn.Size = UDim2.new(0.8, 0, 0.15, 0)
+HideBtn.Position = UDim2.new(0.1, 0, 0.8, 0)
+HideBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+HideBtn.Text = "Minimize UI"
+HideBtn.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+HideBtn.Parent = Main
+Instance.new("UICorner", HideBtn).CornerRadius = UDim.new(0, 5)
+
+HideBtn.MouseButton1Click:Connect(function()
+    Main.Visible = false
+    -- วิธีเปิดคืน: รันสคริปต์ซ้ำ หรือเพิ่มปุ่มลอย (Floating Button)
+end)
+
+-- // ระบบ Rainbow RGB Effect // --
+task.spawn(function()
+    while task.wait() do
+        local hue = (tick() % Settings.RainbowSpeed) / Settings.RainbowSpeed
+        local color = Color3.fromHSV(hue, 1, 1)
+        MainStroke.Color = color
+        FOVStroke.Color = color
+        Title.TextColor3 = color
+    end
+end)
+
+-- // ฟังก์ชันล็อคเป้ากลางจอ // --
+local function GetTarget()
+    local target = nil
+    local shortestDist = Settings.FOVSize
+    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character then
+            local root = v.Character:FindFirstChild("HumanoidRootPart") or v.Character:FindFirstChild("Head")
+            local hum = v.Character:FindFirstChildOfClass("Humanoid")
+            
+            if root and hum and hum.Health > 0 then
+                local screenPos, vis = Camera:WorldToViewportPoint(root.Position)
+                if vis then
+                    local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                    if dist < shortestDist then
+                        shortestDist = dist
+                        target = root
+                    end
+                end
+            end
+        end
+    end
+    return target
+end
+
+RunService.RenderStepped:Connect(function()
+    if Settings.Enabled then
+        local target = GetTarget()
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
+    end
+end)
+
+print("Aimbot by RUHEE loaded successfully!")
