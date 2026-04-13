@@ -1,0 +1,207 @@
+-- [[ Ruhee Luxury UI - RGB Floating with TextBox FOV ]] --
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- // Settings // --
+local Settings = {
+    Aimbot = false,
+    ShowFOV = false,
+    FOVSize = 30,
+    MaxDistance = 500
+}
+
+-- // FOV Circle Drawing // --
+local Circle = Drawing.new("Circle")
+Circle.Thickness = 2
+Circle.NumSides = 100
+Circle.Radius = Settings.FOVSize
+Circle.Filled = false
+Circle.Visible = false
+Circle.Color = Color3.new(1, 1, 1)
+
+-- // Aimbot Logic // --
+local function GetClosestPlayer()
+    local target = nil
+    local shortestDist = Settings.FOVSize
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+            local head = v.Character.Head
+            local hum = v.Character:FindFirstChild("Humanoid")
+            if hum and hum.Health > 0 then
+                local mag = (LocalPlayer.Character.HumanoidRootPart.Position - head.Position).Magnitude
+                if mag <= Settings.MaxDistance then
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+                    if onScreen then
+                        local mouseDist = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
+                        if mouseDist <= Settings.FOVSize and mouseDist < shortestDist then
+                            shortestDist = mouseDist
+                            target = head
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return target
+end
+
+-- // Create UI // --
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RuheeCustom_UI"
+Gui.Parent = CoreGui
+Gui.ResetOnSpawn = false
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 200, 0, 320)
+Main.Position = UDim2.new(0.05, 0, 0.4, 0)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true 
+Main.Parent = Gui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 15)
+UICorner.Parent = Main
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2.5
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UIStroke.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 50)
+Title.Text = "RUHEE COMBAT"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 17
+Title.BackgroundTransparency = 1
+Title.Parent = Main
+
+local Container = Instance.new("Frame")
+Container.Size = UDim2.new(1, -20, 1, -60)
+Container.Position = UDim2.new(0, 10, 0, 55)
+Container.BackgroundTransparency = 1
+Container.Parent = Main
+
+local List = Instance.new("UIListLayout")
+List.Padding = UDim.new(0, 12)
+List.HorizontalAlignment = Enum.HorizontalAlignment.Center
+List.Parent = Container
+
+-- // Toggle Function // --
+local function AddToggle(text, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 42)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.Text = "  " .. text
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 13
+    btn.Parent = Container
+    
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, 10)
+    c.Parent = btn
+
+    local Indicator = Instance.new("Frame")
+    Indicator.Size = UDim2.new(0, 10, 0, 10)
+    Indicator.Position = UDim2.new(0.85, 0, 0.38, 0)
+    Indicator.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    Indicator.Parent = btn
+    
+    local indCorner = Instance.new("UICorner")
+    indCorner.CornerRadius = UDim.new(1, 0)
+    indCorner.Parent = Indicator
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        callback(state)
+        Indicator.BackgroundColor3 = state and Color3.fromRGB(60, 255, 60) or Color3.fromRGB(255, 60, 60)
+    end)
+end
+
+-- // Add Toggles // --
+AddToggle("Aimbot Lock", function(v) Settings.Aimbot = v end)
+AddToggle("Draw FOV", function(v) Settings.ShowFOV = v end)
+
+-- // FOV Input (ตัวปรับวงแบบใส่ตัวเลข) // --
+local InputFrame = Instance.new("Frame")
+InputFrame.Size = UDim2.new(1, 0, 0, 55)
+InputFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+InputFrame.Parent = Container
+
+local ICorner = Instance.new("UICorner")
+ICorner.CornerRadius = UDim.new(0, 10)
+ICorner.Parent = InputFrame
+
+local InputLabel = Instance.new("TextLabel")
+InputLabel.Size = UDim2.new(1, 0, 0, 25)
+InputLabel.Text = "Set FOV Size"
+InputLabel.TextColor3 = Color3.new(1, 1, 1)
+InputLabel.Font = Enum.Font.GothamMedium
+InputLabel.TextSize = 12
+InputLabel.BackgroundTransparency = 1
+InputLabel.Parent = InputFrame
+
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(0.8, 0, 0, 22)
+TextBox.Position = UDim2.new(0.1, 0, 0.55, 0)
+TextBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+TextBox.Text = tostring(Settings.FOVSize)
+TextBox.TextColor3 = Color3.new(1, 1, 1)
+TextBox.Font = Enum.Font.GothamBold
+TextBox.TextSize = 14
+TextBox.Parent = InputFrame
+
+local TBCorner = Instance.new("UICorner")
+TBCorner.CornerRadius = UDim.new(0, 5)
+TBCorner.Parent = TextBox
+
+TextBox.FocusLost:Connect(function()
+    local val = tonumber(TextBox.Text)
+    if val then
+        Settings.FOVSize = val
+    else
+        TextBox.Text = tostring(Settings.FOVSize)
+    end
+end)
+
+-- // Close Button // --
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(1, 0, 0, 42)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+CloseBtn.Text = "CLOSE MENU"
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.Parent = Container
+local CCorner = Instance.new("UICorner")
+CCorner.CornerRadius = UDim.new(0, 10)
+CCorner.Parent = CloseBtn
+CloseBtn.MouseButton1Click:Connect(function() Gui:Destroy() Circle:Remove() end)
+
+-- // RGB & Render Loop // --
+RunService.RenderStepped:Connect(function()
+    local color = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+    UIStroke.Color = color
+    Title.TextColor3 = color
+    
+    Circle.Visible = Settings.ShowFOV
+    Circle.Radius = Settings.FOVSize
+    Circle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    Circle.Color = color
+    
+    if Settings.Aimbot then
+        local target = GetClosestPlayer()
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
+    end
+end)
