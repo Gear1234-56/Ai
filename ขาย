@@ -1,0 +1,217 @@
+local Player = game:GetService("Players").LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local VIM = game:GetService("VirtualInputManager")
+
+-- ลบ UI เก่า
+if PlayerGui:FindFirstChild("RUHEE_PREMIUM") then
+    PlayerGui.RUHEE_PREMIUM:Destroy()
+end
+
+-- สร้าง ScreenGui
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "RUHEE_PREMIUM"
+ScreenGui.ResetOnSpawn = false
+
+-- Main Frame (ปรับขนาดให้สมส่วน: กว้างขึ้นนิดหน่อยแต่เตี้ยลงเพื่อให้ดูแน่น)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 220, 0, 270) 
+MainFrame.Position = UDim2.new(0.5, -110, 0.4, -135)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15) -- สีเข้มขึ้นดูแพง
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local MainCorner = Instance.new("UICorner", MainFrame)
+MainCorner.CornerRadius = UDim.new(0, 10)
+
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 2.5
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- หัวข้อ (Title Bar)
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "RUHEE PREMIUM"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 17
+Title.Font = Enum.Font.GothamBold
+Title.BackgroundTransparency = 1
+
+-- เส้นคั่นใต้ชื่อ (ทำให้ดูเป็นระเบียบ)
+local Line = Instance.new("Frame", MainFrame)
+Line.Size = UDim2.new(0.85, 0, 0, 1)
+Line.Position = UDim2.new(0.075, 0, 0, 40)
+Line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Line.BackgroundTransparency = 0.8
+Line.BorderSizePixel = 0
+
+-- Status (ตัวเล็กประหยัดพื้นที่)
+local Status = Instance.new("TextLabel", MainFrame)
+Status.Size = UDim2.new(1, 0, 0, 20)
+Status.Position = UDim2.new(0, 0, 0, 45)
+Status.Text = "STATUS: IDLE"
+Status.TextColor3 = Color3.fromRGB(150, 150, 150)
+Status.TextSize = 10
+Status.Font = Enum.Font.GothamBold
+Status.BackgroundTransparency = 1
+
+-- Container สำหรับจัดเรียง
+local Container = Instance.new("Frame", MainFrame)
+Container.Size = UDim2.new(1, 0, 1, -75)
+Container.Position = UDim2.new(0, 0, 0, 70)
+Container.BackgroundTransparency = 1
+
+local UIList = Instance.new("UIListLayout", Container)
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIList.Padding = UDim.new(0, 8) -- ระยะห่างพอดีๆ
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- ระบบ RGB
+task.spawn(function()
+    while task.wait() do
+        local hue = tick() % 4 / 4
+        local color = Color3.fromHSV(hue, 0.6, 1)
+        UIStroke.Color = color
+        Title.TextColor3 = color
+    end
+end)
+
+-- ช่องตั้งเวลา (ดีไซน์ให้เข้าเซต)
+local TimeRow = Instance.new("Frame", Container)
+TimeRow.Size = UDim2.new(0.88, 0, 0, 35)
+TimeRow.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TimeRow.LayoutOrder = 1
+Instance.new("UICorner", TimeRow).CornerRadius = UDim.new(0, 6)
+
+local TimeLabel = Instance.new("TextLabel", TimeRow)
+TimeLabel.Size = UDim2.new(0.6, 0, 1, 0)
+TimeLabel.Position = UDim2.new(0.05, 0, 0, 0)
+TimeLabel.Text = "SET DELAY (S):"
+TimeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+TimeLabel.TextSize = 11
+TimeLabel.Font = Enum.Font.GothamBold
+TimeLabel.BackgroundTransparency = 1
+TimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local TimeInput = Instance.new("TextBox", TimeRow)
+TimeInput.Size = UDim2.new(0.3, 0, 0, 25)
+TimeInput.Position = UDim2.new(0.65, 0, 0.15, 0)
+TimeInput.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TimeInput.Text = "15"
+TimeInput.TextColor3 = Color3.new(1, 1, 1)
+TimeInput.Font = Enum.Font.GothamBold
+TimeInput.TextSize = 13
+Instance.new("UICorner", TimeInput).CornerRadius = UDim.new(0, 4)
+
+-- ฟังก์ชันสร้างปุ่ม (Size สมส่วน ไม่เล็กไป ไม่ใหญ่จนล้น)
+local function CreateButton(text, order, color)
+    local btn = Instance.new("TextButton", Container)
+    btn.Size = UDim2.new(0.88, 0, 0, 40) -- ความสูงกำลังดีสำหรับมือถือและคอม
+    btn.Text = text
+    btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 35)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.LayoutOrder = order
+    btn.AutoButtonColor = true
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    -- ใส่ Stroke เล็กๆ ให้ปุ่มดูคม
+    local s = Instance.new("UIStroke", btn)
+    s.Thickness = 1
+    s.Transparency = 0.8
+    s.Color = Color3.new(1,1,1)
+    
+    return btn
+end
+
+local AddBtn = CreateButton("ADD POSITION", 2)
+local ClearBtn = CreateButton("CLEAR ALL POINTS", 3)
+local StartBtn = CreateButton("START FARMING", 4, Color3.fromRGB(0, 100, 200))
+
+-- Credit (ตอกย้ำว่าของทำขาย)
+local Credit = Instance.new("TextLabel", MainFrame)
+Credit.Size = UDim2.new(1, 0, 0, 20)
+Credit.Position = UDim2.new(0, 0, 1, -20)
+Credit.Text = "DEVELOPED BY RUHEE VIP"
+Credit.TextColor3 = Color3.new(1, 1, 1)
+Credit.TextTransparency = 0.7
+Credit.TextSize = 8
+Credit.Font = Enum.Font.GothamBold
+Credit.BackgroundTransparency = 1
+
+---------------------------------------------------------
+-- ระบบการทำงาน (Logic เดิมที่เสถียรอยู่แล้ว)
+---------------------------------------------------------
+local Points = {}
+local IsFarming = false
+local FarmTime = 15
+
+TimeInput.FocusLost:Connect(function()
+    local val = tonumber(TimeInput.Text)
+    if val then FarmTime = val else TimeInput.Text = "15" FarmTime = 15 end
+end)
+
+AddBtn.MouseButton1Click:Connect(function()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        table.insert(Points, hrp.Position)
+        Status.Text = "STATUS: SAVED " .. #Points .. " POINTS"
+    end
+end)
+
+ClearBtn.MouseButton1Click:Connect(function()
+    Points = {}
+    Status.Text = "STATUS: CLEARED"
+end)
+
+StartBtn.MouseButton1Click:Connect(function()
+    IsFarming = not IsFarming
+    if IsFarming then
+        StartBtn.Text = "STOP FARMING"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+    else
+        StartBtn.Text = "START FARMING"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+        Status.Text = "STATUS: IDLE"
+    end
+end)
+
+local function FastClick()
+    local x, y = workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2
+    VIM:SendMouseButtonEvent(x, y, 0, true, game, 1)
+    task.wait(0.05)
+    VIM:SendMouseButtonEvent(x, y, 0, false, game, 1)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if IsFarming and #Points > 0 then
+            for i, pos in ipairs(Points) do
+                if not IsFarming then break end
+                local char = Player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    Status.Text = "MOVING TO POINT [" .. i .. "]"
+                    char.Humanoid:MoveTo(pos)
+                    local t = 0
+                    while (char.HumanoidRootPart.Position - pos).Magnitude > 4 and IsFarming and t < 15 do
+                        task.wait(0.2) t = t + 0.2
+                    end
+                    if IsFarming then
+                        Status.Text = "WORKING... (" .. FarmTime .. "S)"
+                        local start = tick()
+                        while tick() - start < FarmTime and IsFarming do
+                            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                            FastClick()
+                            task.wait(0.15)
+                        end
+                        VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                        task.wait(0.5)
+                    end
+                end
+            end
+        end
+    end
+end)
