@@ -1,0 +1,166 @@
+local Player = game:GetService("Players").LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local VIM = game:GetService("VirtualInputManager")
+
+-- ลบ UI เก่า (ถ้ามี)
+if PlayerGui:FindFirstChild("RUHEE VIP") then
+    PlayerGui["RUHEE VIP"]:Destroy()
+end
+
+-- สร้าง UI RGB
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "RUHEE VIP"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 220, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -110, 0.4, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame)
+
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 3
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "RUHEE VIP"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.BackgroundTransparency = 1
+
+local Status = Instance.new("TextLabel", MainFrame)
+Status.Size = UDim2.new(1, 0, 0, 30)
+Status.Position = UDim2.new(0, 0, 0, 35)
+Status.Text = "สถานะ: รอ..."
+Status.TextColor3 = Color3.new(0.8, 0.8, 0.8)
+Status.TextSize = 13
+Status.BackgroundTransparency = 1
+
+-- ระบบ RGB ที่ขอบและชื่อ
+task.spawn(function()
+    while task.wait() do
+        local hue = tick() % 5 / 5
+        UIStroke.Color = Color3.fromHSV(hue, 0.8, 1)
+        Title.TextColor3 = Color3.fromHSV(hue, 0.8, 1)
+    end
+end)
+
+-- ช่องใส่เวลา (วินาที)
+local TimeLabel = Instance.new("TextLabel", MainFrame)
+TimeLabel.Size = UDim2.new(0.5, 0, 0, 30)
+TimeLabel.Position = UDim2.new(0.075, 0, 0, 70)
+TimeLabel.Text = "ตั้งเวลา (วินาที):"
+TimeLabel.TextColor3 = Color3.new(1, 1, 1)
+TimeLabel.TextSize = 12
+TimeLabel.BackgroundTransparency = 1
+TimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local TimeInput = Instance.new("TextBox", MainFrame)
+TimeInput.Size = UDim2.new(0.3, 0, 0, 30)
+TimeInput.Position = UDim2.new(0.6, 0, 0, 70)
+TimeInput.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TimeInput.Text = "15"
+TimeInput.TextColor3 = Color3.new(1, 1, 1)
+TimeInput.PlaceholderText = "วิ..."
+Instance.new("UICorner", TimeInput)
+
+local function CreateButton(text, yPos)
+    local btn = Instance.new("TextButton", MainFrame)
+    btn.Size = UDim2.new(0.85, 0, 0, 35)
+    btn.Position = UDim2.new(0.075, 0, 0, yPos)
+    btn.Text = text
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", btn)
+    return btn
+end
+
+local AddBtn = CreateButton("บันทึกจุด", 110)
+local ClearBtn = CreateButton("ล้างจุด", 155)
+local StartBtn = CreateButton("เริ่มฟาร์ม", 210)
+
+local Points = {}
+local IsFarming = false
+local FarmTime = 15
+
+-- อัปเดตเวลาเมื่อมีการพิมพ์
+TimeInput.FocusLost:Connect(function()
+    local val = tonumber(TimeInput.Text)
+    if val then
+        FarmTime = val
+        Status.Text = "ตั้งเวลากด: " .. val .. " วิ"
+    else
+        TimeInput.Text = "15"
+        FarmTime = 15
+    end
+end)
+
+AddBtn.MouseButton1Click:Connect(function()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        table.insert(Points, hrp.Position)
+        Status.Text = "บันทึกแล้ว: " .. #Points .. " จุด"
+    end
+end)
+
+ClearBtn.MouseButton1Click:Connect(function()
+    Points = {}
+    Status.Text = "ล้างจุดแล้ว"
+end)
+
+StartBtn.MouseButton1Click:Connect(function()
+    IsFarming = not IsFarming
+    StartBtn.Text = IsFarming and "หยุดฟาร์ม" or "เริ่มฟาร์ม"
+    StartBtn.BackgroundColor3 = IsFarming and Color3.fromRGB(150, 0, 0) or Color3.fromRGB(40, 40, 40)
+end)
+
+local function FastClick()
+    local x = workspace.CurrentCamera.ViewportSize.X / 2
+    local y = workspace.CurrentCamera.ViewportSize.Y / 2
+    VIM:SendMouseButtonEvent(x, y, 0, true, game, 1)
+    task.wait(0.05)
+    VIM:SendMouseButtonEvent(x, y, 0, false, game, 1)
+end
+
+-- Loop การทำงานหลัก
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if IsFarming and #Points > 0 then
+            for i, pos in ipairs(Points) do
+                if not IsFarming then break end
+                
+                local char = Player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    Status.Text = "เดินไปจุดที่ " .. i
+                    char.Humanoid:MoveTo(pos)
+                    
+                    local t = 0
+                    while (char.HumanoidRootPart.Position - pos).Magnitude > 4 and IsFarming and t < 15 do
+                        task.wait(0.2)
+                        t = t + 0.2
+                    end
+                    
+                    if IsFarming then
+                        Status.Text = "ทำงานจุดที่ " .. i .. " (" .. FarmTime .. " วิ)"
+                        
+                        local startWork = tick()
+                        while tick() - startWork < FarmTime and IsFarming do
+                            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                            FastClick()
+                            task.wait(0.15)
+                        end
+                        VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                        
+                        Status.Text = "พักจุดที่ " .. i
+                        task.wait(1)
+                    end
+                end
+            end
+        end
+    end
+end)
