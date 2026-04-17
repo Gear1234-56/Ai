@@ -1,0 +1,183 @@
+-- ส่วนหัวเหมือนเดิม
+local Player = game:GetService("Players").LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local VIM = game:GetService("VirtualInputManager")
+
+-- ลบ UI เก่า
+if PlayerGui:FindFirstChild("RUHEE_VIP_V2") then
+    PlayerGui["RUHEE_VIP_V2"]:Destroy()
+end
+
+-- สร้าง UI หลัก
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "RUHEE_VIP_V2"
+ScreenGui.ResetOnSpawn = false
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 240, 0, 280) 
+MainFrame.Position = UDim2.new(0.5, -120, 0.4, -140)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 10)
+
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 2.5
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- Header
+local Header = Instance.new("TextLabel", MainFrame)
+Header.Size = UDim2.new(1, 0, 0, 45)
+Header.Text = "ฟามสายเลือดสั่งทำ"
+Header.TextColor3 = Color3.new(1, 1, 1)
+Header.TextSize = 18
+Header.Font = Enum.Font.GothamBold
+Header.BackgroundTransparency = 1
+
+-- Status Label
+local Status = Instance.new("TextLabel", MainFrame)
+Status.Size = UDim2.new(0.9, 0, 0, 25)
+Status.Position = UDim2.new(0.05, 0, 0, 45)
+Status.Text = "สถานะ: พร้อมใช้งาน"
+Status.TextColor3 = Color3.fromRGB(200, 200, 200)
+Status.TextSize = 13
+Status.Font = Enum.Font.GothamSemibold
+Status.BackgroundTransparency = 1
+
+-- RGB Effect
+task.spawn(function()
+    while task.wait() do
+        local hue = tick() % 4 / 4
+        UIStroke.Color = Color3.fromHSV(hue, 0.7, 1)
+        Header.TextColor3 = Color3.fromHSV(hue, 0.7, 1)
+    end
+end)
+
+-- Function สร้างปุ่ม
+local function CreateButton(text, yPos, color)
+    local btn = Instance.new("TextButton", MainFrame)
+    btn.Size = UDim2.new(0.85, 0, 0, 38)
+    btn.Position = UDim2.new(0.075, 0, 0, yPos)
+    btn.Text = text
+    btn.BackgroundColor3 = color or Color3.fromRGB(35, 35, 35)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 13
+    btn.AutoButtonColor = true
+    
+    local btnCorner = Instance.new("UICorner", btn)
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    
+    return btn
+end
+
+local AddBtn = CreateButton("บันทึกจุด (RECORD)", 85)
+local ClearBtn = CreateButton("ล้างจุดทั้งหมด (CLEAR)", 130)
+local StartBtn = CreateButton("เริ่มฟาร์มเชื่อมเหล็ก", 190, Color3.fromRGB(0, 150, 0))
+
+local Footer = Instance.new("TextLabel", MainFrame)
+Footer.Size = UDim2.new(1, 0, 0, 20)
+Footer.Position = UDim2.new(0, 0, 1, -25)
+Footer.Text = "WELDING SYSTEM v2.1"
+Footer.TextColor3 = Color3.fromRGB(100, 100, 100)
+Footer.TextSize = 10
+Footer.Font = Enum.Font.Gotham
+Footer.BackgroundTransparency = 1
+
+-- Logic การทำงาน
+local Points = {}
+local IsFarming = false
+
+-- ฟังก์ชันจำลองการกดปุ่มบนคีย์บอร์ด (เพิ่มมาใหม่)
+local function PressKey(keyCode)
+    VIM:SendKeyEvent(true, keyCode, false, game)
+    task.wait(0.1)
+    VIM:SendKeyEvent(false, keyCode, false, game)
+end
+
+local function MouseHold(duration)
+    local x = workspace.CurrentCamera.ViewportSize.X / 2
+    local y = workspace.CurrentCamera.ViewportSize.Y / 2
+    VIM:SendMouseButtonEvent(x, y, 0, true, game, 1)
+    task.wait(duration)
+    VIM:SendMouseButtonEvent(x, y, 0, false, game, 1)
+end
+
+AddBtn.MouseButton1Click:Connect(function()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        table.insert(Points, hrp.Position)
+        Status.Text = "บันทึกแล้ว: " .. #Points .. " จุด"
+    end
+end)
+
+ClearBtn.MouseButton1Click:Connect(function()
+    Points = {}
+    Status.Text = "ล้างข้อมูลจุดทั้งหมดแล้ว"
+end)
+
+StartBtn.MouseButton1Click:Connect(function()
+    IsFarming = not IsFarming
+    if IsFarming then
+        StartBtn.Text = "หยุดฟาร์ม (STOP)"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+    else
+        StartBtn.Text = "เริ่มฟาร์มเชื่อมเหล็ก"
+        StartBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+        VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    end
+end)
+
+-- Main Loop (ส่วนที่แก้ไข)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if IsFarming and #Points > 0 then
+            for i, pos in ipairs(Points) do
+                if not IsFarming then break end
+                
+                local char = Player.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChild("Humanoid")
+                
+                if hrp and hum then
+                    Status.Text = "กำลังไปจุดที่ " .. i
+                    hum:MoveTo(pos)
+                    
+                    local timeout = 0
+                    while (hrp.Position - pos).Magnitude > 4 and IsFarming and timeout < 10 do
+                        task.wait(0.2)
+                        timeout = timeout + 0.2
+                    end
+                    
+                    if IsFarming then
+                        -- ### ขั้นตอนใหม่: กด E เพื่อเริ่มปฏิสัมพันธ์ ###
+                        Status.Text = "จุดที่ "..i..": กด E (Interact)"
+                        PressKey(Enum.KeyCode.E)
+                        task.wait(0.5) -- รออนิเมชั่นหรือระบบเกมเริ่มนิดนึง
+
+                        -- ขั้นตอนที่ 1: คลิกค้าง 5 วิ
+                        Status.Text = "จุดที่ "..i..": เริ่มงาน (ค้าง 5 วิ)"
+                        MouseHold(5)
+                        
+                        -- ขั้นตอนที่ 2: รอโหลด 13.5 วิ
+                        Status.Text = "จุดที่ "..i..": รอหลอดโหลด (13.5 วิ)"
+                        task.wait(13.5) 
+                        
+                        -- ขั้นตอนที่ 3: คลิกค้าง 15 วิ
+                        if IsFarming then
+                            Status.Text = "จุดที่ "..i..": กำลังเชื่อม (ค้าง 15 วิ)"
+                            MouseHold(15)
+                        end
+                        
+                        Status.Text = "จุดที่ " .. i .. " เสร็จสมบูรณ์"
+                        task.wait(1.5)
+                    end
+                end
+            end
+        end
+    end
+end)
