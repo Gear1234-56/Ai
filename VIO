@@ -1,0 +1,128 @@
+-- [[ ฟามสายเลือดสั่งทำ | RUHEE VIP (Compact) ]] --
+local Player = game:GetService("Players").LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local VIM = game:GetService("VirtualInputManager")
+
+if PlayerGui:FindFirstChild("RUHEE_COMPACT") then
+    PlayerGui["RUHEE_COMPACT"]:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "RUHEE_COMPACT"
+
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 180, 0, 260) -- ย่อขนาดลง
+MainFrame.Position = UDim2.new(0.5, -90, 0.4, -130)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.Active = true
+MainFrame.Draggable = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 2.5
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "RUHEE VIP"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.TextSize = 14
+Title.Font = Enum.Font.GothamBold
+Title.BackgroundTransparency = 1
+
+-- RGB 
+task.spawn(function()
+    while task.wait() do
+        local hue = tick() % 5 / 5
+        UIStroke.Color = Color3.fromHSV(hue, 0.8, 1)
+        Title.TextColor3 = Color3.fromHSV(hue, 0.8, 1)
+    end
+end)
+
+-- ฟังก์ชันสร้างช่องกรอกเวลาแบบประหยัดพื้นที่
+local function CreateTimeInput(placeholder, yPos, default)
+    local label = Instance.new("TextLabel", MainFrame)
+    label.Size = UDim2.new(0, 80, 0, 25)
+    label.Position = UDim2.new(0.08, 0, 0, yPos)
+    label.Text = placeholder
+    label.TextColor3 = Color3.new(0.9, 0.9, 0.9)
+    label.TextSize = 11
+    label.BackgroundTransparency = 1
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local input = Instance.new("TextBox", MainFrame)
+    input.Size = UDim2.new(0, 50, 0, 20)
+    input.Position = UDim2.new(0.65, 0, 0, yPos + 2)
+    input.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    input.Text = tostring(default)
+    input.TextColor3 = Color3.new(1, 1, 1)
+    input.TextSize = 11
+    Instance.new("UICorner", input)
+    return input
+end
+
+local Step1Inp = CreateTimeInput("วิขั้น 1:", 40, 4)
+local Step2Inp = CreateTimeInput("วิขั้น 2:", 70, 12.5)
+local Step3Inp = CreateTimeInput("วิขั้น 3:", 100, 10.5)
+
+-- ปุ่ม
+local function CreateButton(text, yPos, color)
+    local btn = Instance.new("TextButton", MainFrame)
+    btn.Size = UDim2.new(0.85, 0, 0, 30)
+    btn.Position = UDim2.new(0.075, 0, 0, yPos)
+    btn.Text = text
+    btn.BackgroundColor3 = color or Color3.fromRGB(45, 45, 45)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    Instance.new("UICorner", btn)
+    return btn
+end
+
+local AddBtn = CreateButton("บันทึกจุด", 140)
+local ClearBtn = CreateButton("ล้างจุด", 175)
+local StartBtn = CreateButton("START", 215, Color3.fromRGB(0, 100, 0))
+
+local Points = {}
+local IsFarming = false
+
+local function SmartHold(duration)
+    local x, y = workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2
+    VIM:SendMouseButtonEvent(x, y, 0, true, game, 0)
+    task.wait(duration)
+    VIM:SendMouseButtonEvent(x, y, 0, false, game, 0)
+end
+
+AddBtn.MouseButton1Click:Connect(function()
+    local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then table.insert(Points, hrp.Position) end
+end)
+
+ClearBtn.MouseButton1Click:Connect(function() Points = {} end)
+
+StartBtn.MouseButton1Click:Connect(function()
+    IsFarming = not IsFarming
+    StartBtn.Text = IsFarming and "STOP" or "START"
+    StartBtn.BackgroundColor3 = IsFarming and Color3.fromRGB(120, 0, 0) or Color3.fromRGB(0, 100, 0)
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if IsFarming and #Points > 0 then
+            for _, pos in ipairs(Points) do
+                if not IsFarming then break end
+                local char = Player.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = CFrame.new(pos)
+                    task.wait(0.5)
+                    SmartHold(tonumber(Step1Inp.Text) or 4)
+                    task.wait(0.2)
+                    task.wait(tonumber(Step2Inp.Text) or 12.5)
+                    SmartHold(tonumber(Step3Inp.Text) or 10.5)
+                    task.wait(1.5)
+                end
+            end
+        end
+    end
+end)
